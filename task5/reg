@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cp "$1" /usr/local/bin/"$1"
+chmod 755 /usr/local/bin/"$1"
