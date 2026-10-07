@@ -1,8 +1,8 @@
 # Практика 1
 
 ## Задача 1.
-```bash
-grep -o '^[^:]*' /etc/passwd | sort# pract_1
+
+grep -o '^[^:]*' /etc/passwd | sort
 
 ## Задача 2.
 
