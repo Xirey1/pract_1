@@ -2,6 +2,9 @@
 
 import argparse
 import os
+import getpass
+from datetime import datetime
+import time
 from pathlib import Path
 import shlex
 import sys
@@ -21,6 +24,9 @@ class Shell:
         self.running = True
         self.vfs = None
         self.cwd = "/"
+        self.previous_cwd = None
+        self.started_at = datetime.now().astimezone()
+        self.started_monotonic = time.monotonic()
 
     @staticmethod
     def parse(line):
@@ -37,20 +43,141 @@ class Shell:
         if not tokens:
             return
         command, *args = tokens
-        if command == "exit":
-            if args:
-                raise ShellError("exit: команда не принимает аргументы")
-            self.running = False
-        elif command in {"ls", "cd"}:
-            print(f"{command}: аргументы = {args!r} (заглушка)")
-        elif command == "conf-dump":
-            if args:
-                raise ShellError("conf-dump: команда не принимает аргументы")
-            print(f"vfs={self.vfs_path if self.vfs_path is not None else '<не задан>'}")
-            print(f"script={self.script_path if self.script_path is not None else '<не задан>'}")
-            print(f"batch={str(self.batch).lower()}")
+        try:
+            if command == "exit":
+                self._no_args(command, args)
+                self.running = False
+            elif command == "conf-dump":
+                self._no_args(command, args)
+                print(f"vfs={self.vfs_path}")
+                print(f"script={self.script_path if self.script_path is not None else '<не задан>'}")
+                print(f"batch={str(self.batch).lower()}")
+            elif command == "ls":
+                self.cmd_ls(args)
+            elif command == "cd":
+                self.cmd_cd(args)
+            elif command == "pwd":
+                self._no_args(command, args)
+                print(self.cwd)
+            elif command == "cat":
+                self.cmd_cat(args)
+            elif command == "who":
+                self._no_args(command, args)
+                print(f"{getpass.getuser()}  vfs  {self.started_at:%Y-%m-%d %H:%M}")
+            elif command == "uptime":
+                self._no_args(command, args)
+                seconds = int(time.monotonic() - self.started_monotonic)
+                days, remainder = divmod(seconds, 86400)
+                hours, remainder = divmod(remainder, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                up = f"{hours}:{minutes:02}:{seconds:02}"
+                if days:
+                    up = f"{days} дн., {up}"
+                print(f"{datetime.now().astimezone():%H:%M:%S} up {up}, 1 user (VFS)")
+            elif command == "echo":
+                print(" ".join(args))
+            elif command == "help":
+                self._no_args(command, args)
+                print("Команды: ls [-al] [пути], cd [путь|-], pwd, cat [-n] файл...,")
+                print("         uptime, who, conf-dump, echo, help, exit")
+            else:
+                raise ShellError(f"неизвестная команда: {command}")
+        except VFSError as error:
+            raise ShellError(f"{command}: {error}") from error
+
+    @staticmethod
+    def _no_args(command, args):
+        if args:
+            raise ShellError(f"{command}: команда не принимает аргументы: {args!r}")
+
+    def cmd_ls(self, args):
+        show_all = False
+        long = False
+        paths = []
+        options_done = False
+        for arg in args:
+            if arg == "--" and not options_done:
+                options_done = True
+            elif arg.startswith("-") and arg != "-" and not options_done:
+                if arg == "--all":
+                    show_all = True
+                elif arg == "--long":
+                    long = True
+                else:
+                    for letter in arg[1:]:
+                        if letter == "a":
+                            show_all = True
+                        elif letter == "l":
+                            long = True
+                        else:
+                            raise ShellError(f"ls: неизвестный параметр -{letter}")
+            else:
+                paths.append(arg)
+        if not paths:
+            paths = ["."]
+        for index, raw_path in enumerate(paths):
+            path = self.vfs.resolve(self.cwd, raw_path)
+            items = self.vfs.list_dir(path)
+            if show_all and self.vfs.is_dir(path):
+                from .vfs import DirEntry
+                items = [DirEntry(".", True, 0), DirEntry("..", True, 0)] + items
+            if not show_all:
+                items = [item for item in items if not item.name.startswith(".")]
+            if index:
+                print()
+            if len(paths) > 1:
+                print(f"{raw_path}:")
+            for item in items:
+                label = item.name + ("/" if item.is_dir and item.name not in (".", "..") else "")
+                if long:
+                    print(f"{'d' if item.is_dir else '-'} {item.size:>8} {label}")
+                else:
+                    print(label)
+
+    def cmd_cd(self, args):
+        if len(args) > 1:
+            raise ShellError("cd: ожидается не более одного пути")
+        if args and args[0] == "-":
+            if self.previous_cwd is None:
+                raise ShellError("cd: предыдущий каталог не задан")
+            target = self.previous_cwd
+            print(target)
         else:
-            raise ShellError(f"неизвестная команда: {command}")
+            target = self.vfs.resolve(self.cwd, args[0] if args else "/")
+        if not self.vfs.is_dir(target):
+            if self.vfs.exists(target):
+                raise ShellError(f"cd: не каталог: {target}")
+            raise ShellError(f"cd: каталог не найден: {target}")
+        self.previous_cwd, self.cwd = self.cwd, target
+
+    def cmd_cat(self, args):
+        numbered = False
+        paths = []
+        options_done = False
+        for arg in args:
+            if arg == "--" and not options_done:
+                options_done = True
+            elif arg.startswith("-") and arg != "-" and not options_done:
+                if arg == "-n":
+                    numbered = True
+                else:
+                    raise ShellError(f"cat: неизвестный параметр {arg}")
+            else:
+                paths.append(arg)
+        if not paths:
+            raise ShellError("cat: укажите один или несколько файлов")
+        line_no = 1
+        for raw_path in paths:
+            path = self.vfs.resolve(self.cwd, raw_path)
+            content = self.vfs.read_file(path).decode("utf-8", errors="replace")
+            if numbered:
+                for line in content.splitlines(keepends=True):
+                    print(f"{line_no:>6}  ", end="")
+                    sys.stdout.write(line)
+                    line_no += 1
+            else:
+                sys.stdout.write(content)
+        sys.stdout.flush()
 
     def run_script(self):
         if self.script_path is None:

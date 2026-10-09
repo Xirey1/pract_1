@@ -1,0 +1,16 @@
+# Этапы 1-4: обычные команды и режимы вывода
+conf-dump
+pwd
+ls
+ls -a -l /
+cd docs/tutorial
+pwd
+ls -l
+cat intro.txt
+cat -n intro.txt
+cd advanced
+cat tips.txt
+cd -
+who
+uptime
+exit

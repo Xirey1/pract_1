@@ -9,3 +9,7 @@
 Пример: `python main.py --vfs demo.zip --script demos/stage2_ok.vfs --batch`.
 
 Этап 3: флаг `--vfs` обязателен. Программа читает ZIP исключительно в оперативную память, кодируя содержимое файлов в base64. При запуске выводится `motd` из корня VFS (если есть). Исходный ZIP не меняется. Для примеров есть `demos/demo_vfs.zip`, `minimal_vfs.zip` и `nested_vfs.zip`.
+
+Этап 4: реализованы `ls` (опции `-a`, `-l`, группировка `-al`), `cd` (абсолютные/относительные пути, `..`, `-`), `cat` (несколько файлов, `-n`), `who`, `uptime`; также `pwd`, `echo`, `help`.
+
+Проверка: `python main.py --vfs demos/demo_vfs.zip --script demos/stage4_success.vfs --batch`.
