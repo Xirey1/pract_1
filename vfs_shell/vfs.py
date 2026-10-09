@@ -112,3 +112,24 @@ class VirtualFS:
             if posixpath.dirname(filename) == path:
                 results.append(DirEntry(posixpath.basename(filename), False, self.size_of(filename)))
         return sorted(results, key=lambda entry: entry.name)
+
+    def remove(self, path, recursive=False, force=False):
+        """Удаляет узел из RAM, не изменяя ZIP-архив на диске."""
+        if path == "/":
+            raise VFSError("нельзя удалить корень VFS")
+        if path in self.files:
+            del self.files[path]
+            return
+        if path in self.dirs:
+            if not recursive:
+                raise VFSError(f"это каталог (используйте rm -r): {path}")
+            prefix = path + "/"
+            for filename in tuple(self.files):
+                if filename.startswith(prefix):
+                    del self.files[filename]
+            for dirname in tuple(self.dirs):
+                if dirname == path or dirname.startswith(prefix):
+                    self.dirs.remove(dirname)
+            return
+        if not force:
+            raise VFSError(f"файл или каталог не найден: {path}")

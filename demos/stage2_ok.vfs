@@ -1,5 +1,5 @@
 # Проверка конфигурации и заглушек
 conf-dump
-ls -a /example
-cd /example
+ls -a /docs
+cd /docs
 exit

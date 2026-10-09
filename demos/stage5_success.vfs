@@ -1,0 +1,10 @@
+# Все изменения - в памяти, ZIP не меняется.
+ls /notes
+rm /notes/todo.txt
+ls /notes
+rm -r /docs/tutorial/advanced
+ls /docs/tutorial
+rm -f /nonexistent.txt
+rm -rf /no/such/directory
+ls -al /
+exit

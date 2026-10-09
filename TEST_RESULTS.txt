@@ -1,0 +1,154 @@
+=== Этап 2. Параметры ===
+Добро пожаловать в VFS! Вариант №11.
+Все изменения выполняются только в памяти.
+VFS:/$ conf-dump
+vfs=demos/demo_vfs.zip
+script=demos/stage2_ok.vfs
+batch=true
+VFS:/$ ls -a /docs
+.
+..
+tutorial/
+VFS:/$ cd /docs
+VFS:/docs$ exit
+=== Этап 3. Три варианта ZIP ===
+VFS:/$ ls /
+hello.txt
+VFS:/$ cat /hello.txt
+Привет!
+VFS:/$ exit
+VFS:/$ ls /
+one/
+VFS:/$ cd one/two/three
+VFS:/one/two/three$ pwd
+/one/two/three
+VFS:/one/two/three$ cat four.txt
+Четвертый уровень.
+VFS:/one/two/three$ cd ../../
+VFS:/one$ ls -a
+.
+..
+root.txt
+two/
+VFS:/one$ exit
+=== Этап 4. Команды ===
+Добро пожаловать в VFS! Вариант №11.
+Все изменения выполняются только в памяти.
+VFS:/$ conf-dump
+vfs=demos/demo_vfs.zip
+script=demos/stage4_success.vfs
+batch=true
+VFS:/$ pwd
+/
+VFS:/$ ls
+README.txt
+data/
+docs/
+empty/
+motd
+notes/
+VFS:/$ ls -a -l /
+d        0 .
+d        0 ..
+-       25 .hidden.txt
+-       72 README.txt
+d        0 data/
+d        0 docs/
+d        0 empty/
+-      141 motd
+d        0 notes/
+VFS:/$ cd docs/tutorial
+VFS:/docs/tutorial$ pwd
+/docs/tutorial
+VFS:/docs/tutorial$ ls -l
+d        0 advanced/
+-       61 intro.txt
+VFS:/docs/tutorial$ cat intro.txt
+Введение в виртуальную оболочку.
+VFS:/docs/tutorial$ cat -n intro.txt
+     1  Введение в виртуальную оболочку.
+VFS:/docs/tutorial$ cd advanced
+VFS:/docs/tutorial/advanced$ cat tips.txt
+Используйте cd, ls, cat и rm.
+VFS:/docs/tutorial/advanced$ cd -
+/docs/tutorial
+VFS:/docs/tutorial$ who
+root  vfs  2026-10-09 17:20
+VFS:/docs/tutorial$ uptime
+17:20:03 up 0:00:00, 1 user (VFS)
+VFS:/docs/tutorial$ exit
+=== Этап 5. rm ===
+Добро пожаловать в VFS! Вариант №11.
+Все изменения выполняются только в памяти.
+VFS:/$ ls /notes
+todo.txt
+VFS:/$ rm /notes/todo.txt
+VFS:/$ ls /notes
+VFS:/$ rm -r /docs/tutorial/advanced
+VFS:/$ ls /docs/tutorial
+intro.txt
+VFS:/$ rm -f /nonexistent.txt
+VFS:/$ rm -rf /no/such/directory
+VFS:/$ ls -al /
+d        0 .
+d        0 ..
+-       25 .hidden.txt
+-       72 README.txt
+d        0 data/
+d        0 docs/
+d        0 empty/
+-      141 motd
+d        0 notes/
+VFS:/$ exit
+=== Ожидаемые ошибки (неуспешный код возврата) ===
+Ошибка VFS: не удалось загрузить ZIP demos/invalid_vfs.zip: File is not a zip file
+Ошибка сценария, строка 3: cat: файл не найден: /does-not-exist
+Добро пожаловать в VFS! Вариант №11.
+Все изменения выполняются только в памяти.
+VFS:/$ pwd
+/
+VFS:/$ cat /does-not-exist
+Ошибка сценария, строка 3: rm: это каталог (используйте rm -r): /docs
+Добро пожаловать в VFS! Вариант №11.
+Все изменения выполняются только в памяти.
+VFS:/$ ls /docs
+tutorial/
+VFS:/$ rm /docs
+=== Автоматические тесты ===
+test_cli_rejects_missing_arguments (test_shell.ShellTests.test_cli_rejects_missing_arguments) ... ok
+test_command_arguments_checked (test_shell.ShellTests.test_command_arguments_checked) ... ok
+test_current_directory_delete_rejected (test_shell.ShellTests.test_current_directory_delete_rejected) ... ok
+test_error_zip_missing_and_invalid (test_shell.ShellTests.test_error_zip_missing_and_invalid) ... ok
+test_exit_stops_script (test_shell.ShellTests.test_exit_stops_script) ... ok
+test_ls_cd_cat_who_uptime_script (test_shell.ShellTests.test_ls_cd_cat_who_uptime_script) ... ok
+test_missing_script (test_shell.ShellTests.test_missing_script) ... ok
+test_motd_on_start (test_shell.ShellTests.test_motd_on_start) ... ok
+test_real_environment_variable_expansion (test_shell.ShellTests.test_real_environment_variable_expansion) ... ok
+test_rm_and_non_persistence (test_shell.ShellTests.test_rm_and_non_persistence) ... ok
+test_rm_without_recursive_stops_script (test_shell.ShellTests.test_rm_without_recursive_stops_script) ... ok
+test_root_delete_rejected (test_shell.ShellTests.test_root_delete_rejected) ... ok
+test_script_stops_at_first_error (test_shell.ShellTests.test_script_stops_at_first_error) ... ok
+test_script_then_interactive (test_shell.ShellTests.test_script_then_interactive) ... ok
+test_stage2_configuration_script (test_shell.ShellTests.test_stage2_configuration_script) ... ok
+test_stage3_minimal_and_nested_archives (test_shell.ShellTests.test_stage3_minimal_and_nested_archives) ... ok
+test_unknown_command_repl_continues (test_shell.ShellTests.test_unknown_command_repl_continues) ... ok
+test_unterminated_quote (test_shell.ShellTests.test_unterminated_quote) ... ok
+test_binary_data_roundtrip_base64 (test_vfs.VFSTests.test_binary_data_roundtrip_base64) ... ok
+test_cat_error_for_directory_and_missing_file (test_vfs.VFSTests.test_cat_error_for_directory_and_missing_file) ... ok
+test_error_invalid_archive (test_vfs.VFSTests.test_error_invalid_archive) ... ok
+test_list_is_sorted (test_vfs.VFSTests.test_list_is_sorted) ... ok
+test_list_single_file (test_vfs.VFSTests.test_list_single_file) ... ok
+test_nested_read_and_non_ascii_text (test_vfs.VFSTests.test_nested_read_and_non_ascii_text) ... ok
+test_paths_absolute_relative_parent (test_vfs.VFSTests.test_paths_absolute_relative_parent) ... ok
+test_rm_directory_needs_recursive (test_vfs.VFSTests.test_rm_directory_needs_recursive) ... ok
+test_rm_missing_force_and_root_protection (test_vfs.VFSTests.test_rm_missing_force_and_root_protection) ... ok
+test_rm_only_changes_memory (test_vfs.VFSTests.test_rm_only_changes_memory) ... ok
+test_root_and_implicit_directories (test_vfs.VFSTests.test_root_and_implicit_directories) ... ok
+test_zip_conflict_rejected (test_vfs.VFSTests.test_zip_conflict_rejected) ... ok
+test_zip_traversal_rejected (test_vfs.VFSTests.test_zip_traversal_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 13.935s
+
+OK
+Все проверки пройдены.

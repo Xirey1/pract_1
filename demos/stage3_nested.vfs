@@ -1,0 +1,8 @@
+# VFS с не менее чем тремя уровнями вложенности
+ls /
+cd one/two/three
+pwd
+cat four.txt
+cd ../../
+ls -a
+exit

@@ -1,0 +1,4 @@
+# Минимальная VFS без motd
+ls /
+cat /hello.txt
+exit

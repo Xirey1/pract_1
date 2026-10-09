@@ -56,6 +56,8 @@ class Shell:
                 self.cmd_ls(args)
             elif command == "cd":
                 self.cmd_cd(args)
+            elif command == "rm":
+                self.cmd_rm(args)
             elif command == "pwd":
                 self._no_args(command, args)
                 print(self.cwd)
@@ -79,7 +81,7 @@ class Shell:
             elif command == "help":
                 self._no_args(command, args)
                 print("Команды: ls [-al] [пути], cd [путь|-], pwd, cat [-n] файл...,")
-                print("         uptime, who, conf-dump, echo, help, exit")
+                print("         rm [-rf] путь..., uptime, who, conf-dump, echo, help, exit")
             else:
                 raise ShellError(f"неизвестная команда: {command}")
         except VFSError as error:
@@ -178,6 +180,41 @@ class Shell:
             else:
                 sys.stdout.write(content)
         sys.stdout.flush()
+
+    def cmd_rm(self, args):
+        recursive = False
+        force = False
+        paths = []
+        options_done = False
+        for arg in args:
+            if arg == "--" and not options_done:
+                options_done = True
+            elif arg.startswith("-") and arg != "-" and not options_done:
+                if arg == "--recursive":
+                    recursive = True
+                elif arg == "--force":
+                    force = True
+                else:
+                    for letter in arg[1:]:
+                        if letter in ("r", "R"):
+                            recursive = True
+                        elif letter == "f":
+                            force = True
+                        else:
+                            raise ShellError(f"rm: неизвестный параметр -{letter}")
+            else:
+                paths.append(arg)
+        if not paths:
+            if force:
+                return
+            raise ShellError("rm: не указан файл для удаления")
+        for raw_path in paths:
+            path = self.vfs.resolve(self.cwd, raw_path)
+            if path == "/":
+                raise ShellError("rm: нельзя удалять корень VFS")
+            if self.vfs.is_dir(path) and (path == self.cwd or self.cwd.startswith(path + "/")):
+                raise ShellError(f"rm: нельзя удалять текущий каталог или его предка: {path}")
+            self.vfs.remove(path, recursive=recursive, force=force)
 
     def run_script(self):
         if self.script_path is None:
