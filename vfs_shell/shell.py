@@ -6,6 +6,8 @@ from pathlib import Path
 import shlex
 import sys
 
+from .vfs import VFSError, VirtualFS
+
 
 class ShellError(Exception):
     """Ошибка команды оболочки."""
@@ -17,6 +19,8 @@ class Shell:
         self.script_path = script_path
         self.batch = batch
         self.running = True
+        self.vfs = None
+        self.cwd = "/"
 
     @staticmethod
     def parse(line):
@@ -26,7 +30,7 @@ class Shell:
             raise ShellError(f"ошибка синтаксиса: {error}") from error
 
     def prompt(self):
-        return "VFS:/$ "
+        return f"VFS:{self.cwd}$ "
 
     def execute_line(self, line):
         tokens = self.parse(line)
@@ -83,6 +87,13 @@ class Shell:
         return 0
 
     def run(self):
+        try:
+            self.vfs = VirtualFS.from_zip(self.vfs_path)
+        except VFSError as error:
+            print(f"Ошибка VFS: {error}", file=sys.stderr)
+            return 2
+        if self.vfs.exists("/motd") and not self.vfs.is_dir("/motd"):
+            print(self.vfs.read_file("/motd").decode("utf-8", errors="replace"), end="")
         code = self.run_script()
         if code or self.batch or not self.running:
             return code
@@ -97,4 +108,6 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.batch and not args.script:
         parser.error("--batch требует --script")
+    if not args.vfs:
+        parser.error("необходимо указать --vfs ПУТЬ_К_ZIP")
     return Shell(args.vfs, args.script, args.batch).run()
