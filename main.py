@@ -1,5 +1,3 @@
-"""Точка входа: эмулятор UNIX-подобной оболочки, вариант 11."""
-
 from vfs_shell.shell import main
 
 

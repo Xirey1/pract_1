@@ -1,9 +1,3 @@
-"""ZIP -> виртуальная файловая система исключительно в оперативной памяти.
-
-Файлы хранятся в словаре как строки base64. ZIP никогда не распаковывается
-на физическую файловую систему, а позднейшие изменения не записываются назад.
-"""
-
 import base64
 from dataclasses import dataclass
 import posixpath
@@ -25,7 +19,7 @@ class DirEntry:
 class VirtualFS:
     def __init__(self):
         self.dirs = {"/"}
-        self.files = {}  # /path -> base64-текст исходных байтов
+        self.files = {}
 
     @classmethod
     def from_zip(cls, archive_path):
